@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        #response {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Pay Now</h1>
+    <label>Amount: </label>
+    <input type="number" id="amount" value="500">
+    <br><br>
+    <button onclick="onPayClick()">Pay</button>
+
+    <div id="response"></div>
+
+    <script>
+        function onPayClick() {
+            const amount = parseFloat(document.getElementById("amount").value);
+
+            // Get saved key from localStorage or generate new one
+            let savedKey = localStorage.getItem("payment_key");
+            if (!savedKey) {
+                savedKey = crypto.randomUUID();
+                localStorage.setItem("payment_key", savedKey);
+                console.log("Generated Idempotency Key:", savedKey);
+            } else {
+                console.log("Reusing Idempotency Key:", savedKey);
+            }
+
+            fetch("http://localhost:8080/api/pay", {
+                method: "POST",
+                headers: {
+                    "Idempotency-Key": savedKey,
+                    "User-Id": "101",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ amount: amount })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    console.log("Payment Response:", data);
+                    const responseDiv = document.getElementById("response");
+                    responseDiv.innerHTML = `
+                        <strong>Status:</strong> ${data.status} <br>
+                        <strong>Payment ID:</strong> ${data.paymentId} <br>
+                        <strong>Message:</strong> ${data.message} <br>
+                        <strong>Amount:</strong> ${data.amount} <br>
+                        <strong>Idempotency Key:</strong> ${data.idempotencyKey}
+                    `;
+
+                    // Clear key only if payment succeeded and user wants new payment
+                    if (data.status === "SUCCESS") {
+                        console.log("Payment successful. Key will remain for retry protection.");
+                        // Uncomment next line only if user starts new payment
+                        // localStorage.removeItem("payment_key");
+                    }
+                })
+                .catch(err => {
+                    console.error("Payment Error:", err);
+                    document.getElementById("response").innerHTML = "Error processing payment!";
+                });
+        }
+    </script>
+
+</body>
+
+</html>
