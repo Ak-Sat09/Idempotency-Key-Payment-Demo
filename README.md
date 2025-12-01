@@ -22,3 +22,7 @@ Idempotency ensures that **multiple clicks or retry requests** do NOT create dup
 - If not exists → create new payment, store key  
 4. Same key = same result  
 5. No more double payment issues
+
+### Idempotency in Action (Retry Protection)
+Multiple clicks, same key → same payment.
+![Retry](<img width="960" height="400" alt="Screenshot 2025-12-01 130725" src="https://github.com/user-attachments/assets/917d4ddf-0233-4c90-93db-c3107821570f" />)
